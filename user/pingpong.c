@@ -15,6 +15,10 @@ int main() {
 		int pid = getpid();
 		fprintf(1, "%d: received ping\n", pid);
 		write(child_to_parent[1], "\0", 1);
+		close(parent_to_child[0]);
+		close(parent_to_child[1]);
+		close(child_to_parent[0]);
+		close(child_to_parent[1]);
 		exit(0);
 	} else {
 		// in parent process
@@ -23,7 +27,16 @@ int main() {
 		read(child_to_parent[0], buffer, 1);
 		int pid = getpid();
 		fprintf(1, "%d: received pong\n", pid);
+		close(parent_to_child[0]);
+		close(parent_to_child[1]);
+		close(child_to_parent[0]);
+		close(child_to_parent[1]);
+
 		exit(0);
 	}
+	close(parent_to_child[0]);
+	close(parent_to_child[1]);
+	close(child_to_parent[0]);
+	close(child_to_parent[1]);
 	exit(0);
 }

@@ -193,6 +193,8 @@ UPROGS=\
 	$U/_grind\
 	$U/_wc\
 	$U/_zombie\
+	$U/_trace\
+	$U/_sysinfotest\
 	$U/_sleep\
 	$U/_pingpong\
 	$U/_primes\
@@ -204,6 +206,7 @@ ifeq ($(LAB),$(filter $(LAB), pgtbl lock))
 UPROGS += \
 	$U/_stats
 endif
+
 
 ifeq ($(LAB),traps)
 UPROGS += \

@@ -1,0 +1,7 @@
+- **Which other xv6 system call(s) could be made faster using this shared page? Explain how.**
+For those system calls which want to read states which are maintained in os, shared page can speed up them. But if the state is not constant, os need to update them in those pages when changing.
+- **Explain the output of vmprint in terms of Fig 3-4 from the text. What does page 0 contain? What is in page 2? When running in user mode, could the process read/write the memory mapped by page 1? What does the third to last page contain?**
+page 0: init code in proc.c userinit.
+page 2: user stack.
+The process can’t read/write page1. It’s set to be unreadable to detect stack overflow.
+The third to last page contain trampoline, trapframe, and usyscall.

@@ -44,6 +44,7 @@ OBJS_KCSAN += \
 	$K/kcsan.o
 endif
 
+
 ifeq ($(LAB),pgtbl)
 OBJS += \
 	$K/vmcopyin.o
@@ -145,6 +146,7 @@ tags: $(OBJS) _init
 	etags *.S *.c
 
 ULIB = $U/ulib.o $U/usys.o $U/printf.o $U/umalloc.o
+
 
 ifeq ($(LAB),$(filter $(LAB), pgtbl lock))
 ULIB += $U/statistics.o

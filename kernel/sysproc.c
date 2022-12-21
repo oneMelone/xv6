@@ -1,8 +1,8 @@
 #include "types.h"
 #include "riscv.h"
+#include "param.h"
 #include "defs.h"
 #include "date.h"
-#include "param.h"
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
@@ -47,6 +47,7 @@ sys_sbrk(void)
 
   if(argint(0, &n) < 0)
     return -1;
+  
   addr = myproc()->sz;
   if(growproc(n) < 0)
     return -1;
@@ -69,6 +70,7 @@ sys_sleep(void)
   int n;
   uint ticks0;
 
+
   if(argint(0, &n) < 0)
     return -1;
   acquire(&tickslock);
@@ -83,6 +85,46 @@ sys_sleep(void)
   release(&tickslock);
   return 0;
 }
+
+
+#ifdef LAB_PGTBL
+int
+sys_pgaccess(void)
+{
+  uint64 base, mask;
+  int len;
+  if(argaddr(0, &base) < 0)
+    return -1;
+  if(argint(1, &len) < 0)
+    return -1;
+  if(argaddr(2, &mask) < 0)
+    return -1;
+  
+  if(len > 32 || len < 0) {
+    printf("pgaccess check at most 32 pages a time");
+    return -1;
+  }
+
+  base = PGROUNDDOWN(base);
+  pagetable_t pagetable = myproc()->pagetable;
+  uint result = 0;
+  for (int i = 0; i < len; i++) {
+    pte_t *entry = walk(pagetable, base, 0);
+    if(entry != 0 && (*entry & PTE_A)) {
+      result |= 1 << i;
+      int clear_access_mask = ~PTE_A;
+      *entry = *entry & clear_access_mask;
+    }
+    base += PGSIZE;
+  }
+
+  if(copyout(pagetable, mask, (char *)&result, sizeof(result))) {
+    return -1;
+  }
+
+  return 0;
+}
+#endif
 
 uint64
 sys_kill(void)

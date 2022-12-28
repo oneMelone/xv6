@@ -13,5 +13,8 @@ int f(int x) {
 
 void main(void) {
   printf("%d %d\n", f(8)+1, 13);
+  asm volatile("li a1,6");
+  asm volatile("li a2,108");
+  printf("x=%d y=%d\n");
   exit(0);
 }

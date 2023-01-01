@@ -6,6 +6,7 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
+#include "sysinfo.h"
 
 uint64
 sys_exit(void)
@@ -50,6 +51,16 @@ sys_sbrk(void)
   if(growproc(n) < 0)
     return -1;
   return addr;
+}
+
+uint64
+sys_trace(void)
+{
+	int mask;
+	if(argint(0, &mask) < 0)
+		return -1;
+	myproc()->trace_mask = mask;
+	return 0;
 }
 
 uint64
@@ -121,3 +132,4 @@ uint64 sys_sigreturn(void) {
   myproc()->backup_trapframe = 0;
   return 0;
 }
+

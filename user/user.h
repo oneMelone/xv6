@@ -1,5 +1,6 @@
 struct stat;
 struct rtcdate;
+struct sysinfo;
 
 // system calls
 int fork(void);
@@ -25,6 +26,7 @@ int sleep(int);
 int uptime(void);
 int sigalarm(int ticks, void (*handler)());
 int sigreturn(void);
+
 
 // ulib.c
 int stat(const char*, struct stat*);

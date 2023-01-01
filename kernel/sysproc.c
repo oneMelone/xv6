@@ -69,6 +69,8 @@ sys_sleep(void)
   int n;
   uint ticks0;
 
+  backtrace();
+
   if(argint(0, &n) < 0)
     return -1;
   acquire(&tickslock);
@@ -107,18 +109,27 @@ sys_uptime(void)
   return xticks;
 }
 
-uint64
-sys_sysinfo(void)
-{
-  uint64 addr; // user pointer to struct sysinfo
-  struct proc *p = myproc();
-
-  if (argaddr(0, &addr) < 0) return -1;
-  struct sysinfo info;
-  info.freemem = get_freemem_amount();
-  info.nproc = get_usedproc_num();
-
-  if(copyout(p->pagetable, addr, (char*)&info, sizeof(info)) < 0)
-	return -1;
+uint64 sys_sigalarm(void) {
+  myproc()->clocks = 0;
+  int tick;
+  if(argint(0, &tick) < 0)
+    return -1;
+  uint64 fn;
+  if(argaddr(1, &fn) < 0)
+    return -1;
+  
+  myproc()->ticks = tick;
+  myproc()->handler = fn;
   return 0;
 }
+
+uint64 sys_sigreturn(void) {
+  myproc()->clocks = 0;
+  for (int i = 0; i < PGSIZE; i++) {
+    *((char*)(myproc()->trapframe) + i) = *((char*)(myproc()->backup_trapframe) + i);
+  }
+  kfree(myproc()->backup_trapframe);
+  myproc()->backup_trapframe = 0;
+  return 0;
+}
+

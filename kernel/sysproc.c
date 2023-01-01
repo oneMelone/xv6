@@ -97,3 +97,27 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+uint64 sys_sigalarm(void) {
+  myproc()->clocks = 0;
+  int tick;
+  if(argint(0, &tick) < 0)
+    return -1;
+  uint64 fn;
+  if(argaddr(1, &fn) < 0)
+    return -1;
+  
+  myproc()->ticks = tick;
+  myproc()->handler = fn;
+  return 0;
+}
+
+uint64 sys_sigreturn(void) {
+  myproc()->clocks = 0;
+  for (int i = 0; i < PGSIZE; i++) {
+    *((char*)(myproc()->trapframe) + i) = *((char*)(myproc()->backup_trapframe) + i);
+  }
+  kfree(myproc()->backup_trapframe);
+  myproc()->backup_trapframe = 0;
+  return 0;
+}

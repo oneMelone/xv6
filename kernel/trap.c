@@ -77,8 +77,21 @@ usertrap(void)
     exit(-1);
 
   // give up the CPU if this is a timer interrupt.
-  if(which_dev == 2)
+  if(which_dev == 2) {
+    p->clocks += 1;
+    if(p->ticks != 0 && p->clocks == p->ticks && p->backup_trapframe == 0) {
+      p->backup_trapframe = kalloc();
+      if (p->backup_trapframe == 0) {
+        panic("cannot allocate backup trapframe before handler call");
+      }
+      for (int i = 0; i < PGSIZE; i++) {
+        *((char*)(myproc()->backup_trapframe) + i) = *((char*)(myproc()->trapframe) + i);
+      }
+
+      p->trapframe->epc = p->handler;
+    }
     yield();
+  }
 
   usertrapret();
 }

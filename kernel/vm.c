@@ -425,3 +425,44 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
     return -1;
   }
 }
+
+// return 1 if va is in a cow page and the user is able to access; otherwise return 0.
+int
+check_cow(uint64 va, pagetable_t pagetable) {
+  pte_t *pte = walk(pagetable, va, 0);
+  if(pte == 0)
+    return 0;
+  if((*pte & PTE_V) == 0)
+    return 0;
+  if((*pte & PTE_U) == 0)
+    return 0;
+
+  if (*pte & PTE_COW) {
+    return 1;
+  }
+  return 0;
+}
+
+// copy a cow page, update the pagetable. return 0 if succes, else return -1.
+int
+copy_page(uint64 va, pagetable_t pagetable) {
+  pte_t *pte;
+  char* mem;
+  if (pte = walk(pagetable, va, 0) == 0) {
+    panic("copy_page: pte should exist");
+  }
+  if ((*pte & PTE_V) == 0) {
+    panic("copy_page: page not present");
+  }
+  uint64 pa = PTE2PA(*pte);
+  uint flags = PTE_FLAGS(*pte);
+  if ((mem = kalloc()) == 0) {
+    return -1;
+  }
+  memmove(mem, (char*)pa, PGSIZE);
+  if (mappages(pagetable, va, PGSIZE, (uint64)mem, flags) != 0) {
+    kfree(mem);
+    return -1;
+  }
+  return 0;
+}

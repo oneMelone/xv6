@@ -267,7 +267,8 @@ growproc(int n)
   return 0;
 }
 
-// Create a new process, copying the parent.
+// Create a new process, copying the parent's page table, and set ptes to be not writable.
+// Pages will be copied when user attemps to write.
 // Sets up child kernel stack to return as if from fork() system call.
 int
 fork(void)
@@ -282,7 +283,7 @@ fork(void)
   }
 
   // Copy user memory from parent to child.
-  if(uvmcopy(p->pagetable, np->pagetable, p->sz) < 0){
+  if(shallowcopy(p->pagetable, np->pagetable, p->sz) < 0){
     freeproc(np);
     release(&np->lock);
     return -1;

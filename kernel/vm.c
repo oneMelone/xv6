@@ -448,7 +448,7 @@ int
 copy_page(uint64 va, pagetable_t pagetable) {
   pte_t *pte;
   char* mem;
-  if (pte = walk(pagetable, va, 0) == 0) {
+  if ((pte = walk(pagetable, va, 0)) == 0) {
     panic("copy_page: pte should exist");
   }
   if ((*pte & PTE_V) == 0) {

@@ -267,7 +267,8 @@ growproc(int n)
   return 0;
 }
 
-// Create a new process, copying the parent.
+// Create a new process, copying the parent's page table, and set ptes to be not writable.
+// Pages will be copied when user attemps to write.
 // Sets up child kernel stack to return as if from fork() system call.
 int
 fork(void)

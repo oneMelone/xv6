@@ -72,7 +72,7 @@ usertrap(void)
     uint64 va = r_stval();
     if (check_cow(va, p->pagetable)) {
       if (copy_page(va, p->pagetable) == -1) {
-        printf("copy page error");
+        printf("usertrap: copy page error\n");
         p->killed = 1;
       }
     } else {

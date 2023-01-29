@@ -148,8 +148,8 @@ mappages(pagetable_t pagetable, uint64 va, uint64 size, uint64 pa, int perm)
   for(;;){
     if((pte = walk(pagetable, a, 1)) == 0)
       return -1;
-    if(*pte & PTE_V)
-      panic("mappages: remap");
+    // if(*pte & PTE_V)
+    //   panic("mappages: remap");
     *pte = PA2PTE(pa) | perm | PTE_V;
     if(a == last)
       break;
@@ -307,11 +307,14 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
       panic("shallowcopy: pte should exist");
     if((*pte & PTE_V) == 0)
       panic("shallowcopy: page not present");
+    *pte &= ~PTE_W; // clear write bit
+    *pte |= PTE_COW; // set cow bit
     pa = PTE2PA(*pte);
     flags = PTE_FLAGS(*pte);
     if(mappages(new, i, PGSIZE, pa, flags) != 0){
       goto err;
     }
+    incr_ref_cnt(pa);
   }
   return 0;
 
@@ -343,6 +346,12 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
 
   while(len > 0){
     va0 = PGROUNDDOWN(dstva);
+    if (check_cow(va0, pagetable)) {
+      if (copy_page(va0, pagetable) == -1) {
+        printf("copyout: copy page error\n");
+        return -1;
+      }
+    }
     pa0 = walkaddr(pagetable, va0);
     if(pa0 == 0)
       return -1;
@@ -429,6 +438,9 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
 // return 1 if va is in a cow page and the user is able to access; otherwise return 0.
 int
 check_cow(uint64 va, pagetable_t pagetable) {
+  if (va >= MAXVA) {
+    return 0;
+  }
   pte_t *pte = walk(pagetable, va, 0);
   if(pte == 0)
     return 0;
@@ -446,6 +458,7 @@ check_cow(uint64 va, pagetable_t pagetable) {
 // copy a cow page, update the pagetable. return 0 if succes, else return -1.
 int
 copy_page(uint64 va, pagetable_t pagetable) {
+  va = PGROUNDDOWN(va);
   pte_t *pte;
   char* mem;
   if ((pte = walk(pagetable, va, 0)) == 0) {
@@ -457,10 +470,18 @@ copy_page(uint64 va, pagetable_t pagetable) {
   uint64 pa = PTE2PA(*pte);
   uint flags = PTE_FLAGS(*pte);
   if ((mem = kalloc()) == 0) {
+    printf("copy_page: kalloc return 0\n");
     return -1;
   }
   memmove(mem, (char*)pa, PGSIZE);
+  // uvmunmap(pagetable, va, 1, 1);
+  if (desc_ref_cnt(pa) == 0) {
+    kfree((void *)pa);
+  }
+  flags |= PTE_W; // set write bit
+  flags &= ~PTE_COW; // clear cow bit
   if (mappages(pagetable, va, PGSIZE, (uint64)mem, flags) != 0) {
+    printf("copy_page: mappages error\n");
     kfree(mem);
     return -1;
   }

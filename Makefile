@@ -188,7 +188,31 @@ UPROGS=\
 	$U/_grind\
 	$U/_wc\
 	$U/_zombie\
+	$U/_trace\
+	$U/_sysinfotest\
+	$U/_sleep\
+	$U/_pingpong\
+	$U/_primes\
+	$U/_find\
+	$U/_xargs\
 
+
+ifeq ($(LAB),$(filter $(LAB), pgtbl lock))
+UPROGS += \
+	$U/_stats
+endif
+
+
+ifeq ($(LAB),traps)
+UPROGS += \
+	$U/_call\
+	$U/_bttest
+endif
+
+ifeq ($(LAB),lazy)
+UPROGS += \
+	$U/_lazytests
+endif
 
 
 
@@ -230,6 +254,7 @@ ph: notxv6/ph.c
 barrier: notxv6/barrier.c
 	gcc -o barrier -g -O2 $(XCFLAGS) notxv6/barrier.c -pthread
 endif
+
 
 ifeq ($(LAB),pgtbl)
 UPROGS += \

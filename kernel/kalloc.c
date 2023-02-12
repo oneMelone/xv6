@@ -14,6 +14,10 @@ void freerange(void *pa_start, void *pa_end);
 extern char end[]; // first address after kernel.
                    // defined by kernel.ld.
 
+// reference count for pages.
+char ref_cnt[PHYSTOP/PGSIZE];
+struct spinlock ref_cnt_lock; // lock for ref_cnt, in case, two parallel fork incr the same ref_cnt element.
+
 struct run {
   struct run *next;
 };
@@ -27,6 +31,7 @@ void
 kinit()
 {
   initlock(&kmem.lock, "kmem");
+  memset(ref_cnt, 1, PHYSTOP/PGSIZE);
   freerange(end, (void*)PHYSTOP);
 }
 
@@ -46,6 +51,10 @@ freerange(void *pa_start, void *pa_end)
 void
 kfree(void *pa)
 {
+  if (ref_cnt[(uint64)pa/PGSIZE] > 1) {
+    desc_ref_cnt((uint64)pa);
+    return;
+  }
   struct run *r;
 
   if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP)
@@ -78,5 +87,26 @@ kalloc(void)
 
   if(r)
     memset((char*)r, 5, PGSIZE); // fill with junk
+  ref_cnt[(uint64)r/PGSIZE] = 1;
   return (void*)r;
+}
+
+char
+incr_ref_cnt(uint64 pa) {
+  char cnt;
+  acquire(&ref_cnt_lock);
+  ref_cnt[pa/PGSIZE] += 1;
+  cnt = ref_cnt[pa/PGSIZE];
+  release(&ref_cnt_lock);
+  return cnt;
+}
+
+char
+desc_ref_cnt(uint64 pa) {
+  char cnt;
+  acquire(&ref_cnt_lock);
+  ref_cnt[pa/PGSIZE] -= 1;
+  cnt = ref_cnt[pa/PGSIZE];
+  release(&ref_cnt_lock);
+  return cnt;
 }

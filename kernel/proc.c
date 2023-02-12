@@ -267,7 +267,8 @@ growproc(int n)
   return 0;
 }
 
-// Create a new process, copying the parent.
+// Create a new process, copying the parent's page table, and set ptes to be not writable.
+// Pages will be copied when user attemps to write.
 // Sets up child kernel stack to return as if from fork() system call.
 int
 fork(void)
@@ -314,6 +315,9 @@ fork(void)
   acquire(&np->lock);
   np->state = RUNNABLE;
   release(&np->lock);
+
+  // Copy trace_mask from parent to child.
+  np->trace_mask = p->trace_mask;
 
   return pid;
 }
@@ -654,3 +658,20 @@ procdump(void)
     printf("\n");
   }
 }
+
+uint64
+get_usedproc_num(void)
+{
+  struct proc *p;
+  uint64 total_num = 0;
+
+  for(p = proc; p < &proc[NPROC]; p++) {
+    acquire(&p->lock);
+    if(p->state != UNUSED) {
+		total_num += 1;
+    }
+    release(&p->lock);
+  }
+  return total_num;
+}
+

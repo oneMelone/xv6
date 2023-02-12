@@ -203,19 +203,6 @@ UPROGS += \
 endif
 
 
-ifeq ($(LAB),traps)
-UPROGS += \
-	$U/_call\
-	$U/_bttest
-endif
-
-ifeq ($(LAB),lazy)
-UPROGS += \
-	$U/_lazytests
-endif
-
-
-
 ifeq ($(LAB),$(filter $(LAB), lock))
 UPROGS += \
 	$U/_stats
@@ -254,7 +241,6 @@ ph: notxv6/ph.c
 barrier: notxv6/barrier.c
 	gcc -o barrier -g -O2 $(XCFLAGS) notxv6/barrier.c -pthread
 endif
-
 
 ifeq ($(LAB),pgtbl)
 UPROGS += \
